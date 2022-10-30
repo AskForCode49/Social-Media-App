@@ -49,6 +49,63 @@ export const ModalContent = ({ hideGotoPost, postId, closeModal }) => {
   );
 };
 
+const NewPost = () => { 
+  const { feed, setFeed } = useContext(FeedContext); 
+  const [showModal, setShowModal] = useState(false); 
+  const caption = useInput(""); 
+  const [preview, setPreview] = useState(""); 
+  const [postImage, setPostImage] = useState(""); 
+ 
+  const handleUploadImage = (e) => { 
+    if (e.target.files[0]) { 
+      const reader = new FileReader(); 
+ 
+      reader.onload = (e) => { 
+        setPreview(e.target.result); 
+        setShowModal(true); 
+      }; 
+      reader.readAsDataURL(e.target.files[0]); 
+ 
+      uploadImage(e.target.files[0]).then((res) => { 
+        setPostImage(res.secure_url); 
+      }); 
+    } 
+  }; 
+ 
+  const handleSubmitPost = () => { 
+    if (!caption.value) { 
+      return toast.error("Please write something"); 
+    } 
+ 
+    setShowModal(false); 
+ 
+    const tags = caption.value 
+      .split(" ") 
+      .filter((caption) => caption.startsWith("#")); 
+ 
+    const cleanedCaption = caption.value 
+      .split(" ") 
+      .filter((caption) => !caption.startsWith("#")) 
+      .join(" "); 
+ 
+    caption.setValue(""); 
+ 
+    const newPost = { 
+      caption: cleanedCaption, 
+      files: [postImage], 
+      tags, 
+    }; 
+ 
+    client(`/posts`, { body: newPost }).then((res) => { 
+      const post = res.data; 
+      post.isLiked = false; 
+      post.isSaved = false; 
+      post.isMine = true; 
+      setFeed([post, ...feed]); 
+      window.scrollTo(0, 0); 
+      toast.success("Your post has been submitted successfully"); 
+    }); 
+  };
 export const PostWrapper = styled.div`
   width: 615px;
   background: ${(props) => props.theme.white};
